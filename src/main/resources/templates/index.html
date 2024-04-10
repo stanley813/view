@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" />
+    <title>PaiFan-view</title>
+    <link href="/css/datatables.min.css" rel="stylesheet">
+    <link href="/css/jquery.datetimepicker.min.css" rel="stylesheet">
+    <style>
+        button {
+            background-color: black;
+            color: white;
+            padding: 4px 4px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        #searchArea label {
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        input {
+            text-align: left;
+            /* 居中显示文本 */
+            cursor: pointer;
+            /* 改变光标形状为手型指示可点击 */
+            maxlength: 10;
+            /* 限制输入的最大字符数量 */
+        }
+
+        #paifanTable {
+            width: 100%;
+            !important;
+        }
+
+        table.datatable {
+            width: 100% !important;
+        }
+
+        table.dataTable th.dt-type-numeric {
+            text-align: left
+        }
+
+        table.dataTable th.dt-type-date {
+            text-align: left
+        }
+
+        .container {
+            display: flex;
+            /* 将容器设置为flex布局 */
+        }
+
+        .left-column {
+            width: 40%;
+            /* 左侧列宽度为20% */
+        }
+
+        .center-column {
+            flex: 1;
+            /* 居中列自动占据剩余空间 */
+        }
+
+        .right-column {
+            width: 30%;
+            /* 右侧列宽度为30% */
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+    <div id="searchArea" class="left-column" style="float: left;">
+        <div>
+            <label>放射编号：</label><input id="patientId">
+            <label>姓名拼音：</label><input id="patientName">
+        </div>
+        <div>
+            <label>检查编号：</label><input id="id">
+            <label>病人编号：</label><input id="hId">
+        </div>
+        <div>
+            <label>开始时间：</label><input id="startTime" type="text">
+            <label>结束时间：</label><input id="endTime" type="text">
+        </div>
+        <div style="padding:10px 0px;">
+            <button type="search" onclick="reload()">搜索</button>
+            <button id="clear" onclick="clearInput()">清除</button>
+        </div>
+    </div>
+    <div class="center-column"><img src="/img/paifan-view.png"></div>
+    <div class="right-column"><img style="position:absolute;right:0;height:70px;width:160px" src="/img/paifan.png">
+    </div>
+</div>
+<table id="paifanTable" width="100%"></table>
+<script src="/js/jquery.js"></script>
+<script>
+
+
+        $(document).ready(function () {
+            jQuery.datetimepicker.setLocale('zh');
+
+            $('#startTime').datetimepicker({ language: 'zh', timepicker: false, format: 'Y-m-d' });
+            $('#endTime').datetimepicker({ language: 'zh', timepicker: false, format: 'Y-m-d' });
+
+            var table = $('#paifanTable').dataTable({
+                processing: true,
+                serverSide: true,
+                ordering: false,
+                searching: false,
+                scrollX: false,
+                ajax: {
+                    url: '/ICIS',
+                    contentType: "application/json",
+                    type: 'POST',
+                    dataType: "json",
+                    data: function (d) {
+                        if (!$("#patientName").val() && !$("#patientId").val() && !$("#id").val() && !$("#hId").val()
+                            && !$("#startTime").val() && !$("#endTime").val()) {
+                            const today = new Date().toISOString().split('T')[0];
+                            d.startTime = today + ' 00:00:00';
+                            d.endTime = today + " 23:59:59";
+                        }
+                        if ($("#startTime").val())
+                            d.startTime = $("#startTime").val() + ' 00:00:00';
+                        if ($("#endTime").val())
+                            d.endTime = $("#endTime").val() + " 23:59:59";
+                        d.patientName = $("#patientName").val();
+                        d.patientId = $("#patientId").val();
+                        d.id = $("#id").val();
+                        d.hId = $("#hId").val();
+                        return JSON.stringify(d)
+                    }
+                },
+                columns: [
+                    {
+                        className: 'dt-control',
+                        orderable: false,
+                        defaultContent: '',
+                    },
+                    { data: 'id', title: '检查编号' },
+                    { data: 'patientId', title: '放射编号' },
+                    { data: 'hId', title: '病人编号', defaultContent: '--' },
+                    { data: 'patientClass', title: '病人来源', defaultContent: '--' },
+                    { data: 'patientName', title: '姓名', defaultContent: '--' },
+                    { data: 'patientNamePinYin', title: '姓名拼音', defaultContent: '--' },
+                    { data: 'birthday', title: '出生日期', defaultContent: '--' },
+                    { data: 'item', title: '检查项目', defaultContent: '--' },
+                    { data: 'time', title: '检查时间' }
+                ],
+                columnDefs: [
+                    {
+                        targets: 4,
+                        render: function (data, type, row, meta) {
+                            var patientClass = "--";
+                            if (data == 'E') {
+                                patientClass = "急诊"
+                            } else if (data == 'O') {
+                                patientClass = "门诊"
+                            } else if (data == 'I') {
+                                patientClass = "住院"
+                            } else if (data == 'C') {
+                                patientClass = "体检"
+                            }
+                            return patientClass;
+                        }
+                    }],
+                language: {
+                    "sProcessing": "处理中...",
+                    "sLengthMenu": "显示 _MENU_ 项结果",
+                    "sZeroRecords": "没有匹配结果",
+                    "sInfo": "显示第 _START_ 至 _END_ 项结果，共 _TOTAL_ 项",
+                    "sInfoEmpty": "显示第 0 至 0 项结果，共 0 项",
+                    "sInfoFiltered": "(由 _MAX_ 项结果过滤)",
+                    "sInfoPostFix": "",
+                    "sUrl": "",
+                    "sEmptyTable": "表中数据为空",
+                    "sLoadingRecords": "载入中...",
+                    "sInfoThousands": ",",
+                    "oPaginate": {
+                        "sFirst": "首页",
+                        "sPrevious": "上页",
+                        "sNext": "下页",
+                        "sLast": "末页"
+                    }
+                }
+            });
+            table.on('click', 'td.dt-control', function (e) {
+                var tr = e.target.closest('tr');
+                var row = table.api().row(tr);
+
+                if (row.child.isShown()) {
+                    row.child.hide();
+                }
+                else {
+                    row.child(format(row.data())).show();
+                }
+            });
+
+            $('#paifanTable thead').off('click')
+        })
+
+        function format(d) {
+            return (
+                '<div><label  style="font-weight:bold">图像服务器01:</label><a target="_blank" style="font-weight:bold" href="http://136.1.62.67/?user=epr&password=epr123&tab=Display&AccessionNumber=' + d.id + '">点击查看图像</a> </div>'
+                + '<div><label  style="font-weight:bold">图像服务器02:</label><a target="_blank" style="font-weight:bold" href="http://136.1.59.49/?user=epr&password=epr123&tab=Display&AccessionNumber=' + d.id + '">点击查看图像</a> </div>'
+                + '<div><label  style="font-weight:bold">报告服务器01:</label><a target="_blank" style="font-weight:bold" href="http://136.1.62.103/ris/integration/showReport.action?accession=' + d.id + '&source=kiosk&flag=PRINT">点击查看报告</a> </div>'
+            );
+        }
+
+        function reload() {
+            $('#paifanTable').DataTable().ajax.reload();
+        }
+        function clearInput() {
+            $('input').val('');
+   }
+
+
+
+    </script>
+<script src="/js/datatables.min.js"></script>
+<script src="/js/jquery.datetimepicker.full.min.js"></script>
+</body>
+
+</html>

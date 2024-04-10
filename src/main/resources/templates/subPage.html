@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>子页面</title>
+    <script src="/js/jquery.js"></script>
+    <script>
+
+                $(document).ready(function () {
+                    window.addEventListener("message",receive)
+                })
+
+           function receive(event){
+                event.source.postMessage("888888","*")
+                alert(event.data)
+           }
+
+        function openWin(){
+            window.open('https://www.cnblogs.com/caihongmin/p/17762040.html','超声波测量','width=500,height=500,left=300px',true );
+        }
+         function insert(){
+<!--         console.log($('#main').val())-->
+<!--         console.log($('#sub').val())-->
+<!--         console.log(window.opener)-->
+<!--         $(window.opener.document.getElementById('main')).val($('#sub').val())-->
+            console.log('123')
+            console.log($('#main',window.parent.document).val($('#sub').val()))
+
+            }
+
+
+    </script>
+</head>
+
+<input id="sub"/>
+<body>
+<input type="button" value="打开窗口2222" onclick="openWin()"/>
+<input type="button" value="插入主页面" onclick="insert()"/>
+
+</body>
+</html>

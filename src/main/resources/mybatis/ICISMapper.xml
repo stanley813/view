@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.dao.ICISMapper">
+
+    <select id="query" resultType="map" parameterType="map">
+        select
+        t1.accession_number as "id",
+        max(t1.patient_id) as "patientId",
+        max(t1.patient_name) as "patientNamePinYin",
+        max(t3.p_name) as "patientName",
+        max(t3.p_birthday) as "birthday",
+        listagg(t3.r_itemnames,',') within group (order by t1.study_time desc) as "item",
+        max(t1.study_time) as "time",
+        max(t3.p_patientid) as "hId",
+        max(t3.v_patientclass) as "patientClass"
+        from
+        D_PACS_STUDY t1 left join D_RIS_RESULT t2 on t1.accession_number = t2.accessionnumber
+        left join D_HIS_PV t3 on t2.placerordernumber = t3.placerordernumber
+        where 1 = 1
+        <if test="id != null and id != ''">
+            and t1.accession_number = #{id}
+        </if>
+        <if test="patientId != null and patientId != ''">
+            and t1.patient_id = #{patientId}
+        </if>
+        <if test="patientName != null and patientName != ''">
+            and t1.patient_name = #{patientName}
+        </if>
+        <if test="startTime != null and startTime != ''">
+            and t1.study_time &gt;= #{startTime}
+        </if>
+        <if test="endTime != null  and endTime != ''">
+            and t1.study_time &lt;= #{endTime}
+        </if>
+        <if test="hId != null and hId != ''">
+            and t3.p_patientid = #{hId}
+        </if>
+        group by t1.accession_number
+        order by max(t1.study_time) desc
+    </select>
+</mapper>

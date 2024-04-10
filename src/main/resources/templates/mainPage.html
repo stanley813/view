@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>主页面</title>
+    <script>
+        function openWin(){
+            window.open('http://localhost:8099/subPage','超声波测量','width=500,height=500,left=300px',true );
+        }
+    </script>
+</head>
+<body>
+<iframe src="http://localhost:8099/subPage"></iframe>
+
+<input type="button" value="打开窗口" onclick="openWin()"/>
+<input id="main"/>
+
+</body>
+</html>
